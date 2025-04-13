@@ -5,36 +5,16 @@ class BayesianSentenceLengthSkewModel:
         self.left_variance = 1.0  # For values below median
         self.right_variance = 1.0  # For values above median
     
-    def _count_words_till_punctuation(self, text):
-        """Count words in each sentence and return their average."""
-        punctuations = ['.', '!', '?']
-        sentences = []
-        current_sentence = ""
-        
-        for char in text:
-            current_sentence += char
-            if char in punctuations:
-                sentences.append(current_sentence.strip())
-                current_sentence = ""
-        
-        if current_sentence:
-            sentences.append(current_sentence.strip())
-        
-        word_counts = []
-        for sentence in sentences:
-            words = sentence.split()
-            if words:
-                word_counts.append(len(words))
-        
-        if word_counts:
-            return sum(word_counts) / len(word_counts)
-        return 0
+    def _count_total_words(self, text):
+        """Count total words in the text."""
+        words = text.split()
+        return len(words)
     
     def fit(self, texts):
         """Fit the model to the dataset."""
         # Process each text
         for text in texts:
-            count = self._count_words_till_punctuation(text)
+            count = self._count_total_words(text)
             if count > 0:
                 self.word_counts.append(count)
         
@@ -78,16 +58,16 @@ class BayesianSentenceLengthSkewModel:
         if self.median_length is None:
             return 0.0
             
-        avg_length = self._count_words_till_punctuation(text)
+        word_count = self._count_total_words(text)
         
         # Choose variance based on which side of the median we're on
-        if avg_length <= self.median_length:
+        if word_count <= self.median_length:
             variance = self.left_variance
         else:
             variance = self.right_variance
         
         # Calculate base score using the appropriate variance
-        distance = (avg_length - self.median_length)**2
+        distance = (word_count - self.median_length)**2
         base_score = 1.0 * (2.71828 ** (-distance / (2 * variance)))
         
         # Apply temperature adjustment
