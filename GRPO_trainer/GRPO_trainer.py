@@ -128,7 +128,7 @@ def childish_reward(prompts, completions, **kwargs) -> list[float]:
     return scores
 
 
-def coherence_reward_2(prompts, completions, **kwargs) -> list[float]:
+def coherence_reward(prompts, completions, **kwargs) -> list[float]:
     if "<|im_start|>" in prompts[0]:#huggingface
         prompts = [prompt.split("<|im_start|>user\n",1)[-1].split("<|im_end|>",1)[0] for prompt in prompts]
     elif "<|start_header_id|>" in prompts[0]:#llama
@@ -157,7 +157,7 @@ def coherence_reward_2(prompts, completions, **kwargs) -> list[float]:
 
 
 #predict cosin similairty of responce to answer
-def coherence_reward(prompts, completions, **kwargs) -> list[float]:
+def coherence_reward_2(prompts, completions, **kwargs) -> list[float]:
 
     if "<|im_start|>" in prompts[0]:#huggingface
         prompts = [prompt.split("<|im_start|>user\n",1)[-1].split("<|im_end|>",1)[0] for prompt in prompts]
@@ -242,7 +242,7 @@ def length_reward(prompts, completions, **kwargs) -> list[float]:
 
     scores = [model_length.predict(completion,temperature=1) for completion in completions]
     #also give a lower score for each number of punctuation marks. Were 1 is ok. use 1/x. but if there is 0 then also give 1.0 score
-    scores = [score * (1/(max(1, len(re.findall(r'[.!?]', completion))))) for score, completion in zip(scores, completions)]
+    scores = [score * (1/(max(1, len(re.findall(r'[.!?,;:]', completion))))) for score, completion in zip(scores, completions)]
 
     return scores
 
@@ -270,7 +270,7 @@ class CustomLogger(TrainerCallback):
             "rewards / length_reward": logs.get("rewards/length_reward"),
         }
 
-        save_frequency = [500, 1000,1250, 1500, 2000 ,3500, 3000,4600, 5000]
+        save_frequency = [500, 750, 1000,1250, 1500, 1750, 2000 ,3500, 3000,4500, 5000]
         if steps not in save_frequency:
             save_frequency.append(steps)
 
