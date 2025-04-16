@@ -1,3 +1,7 @@
 models/*
 .env
 *cache/*
+*unsloth_compiled_cache*
+*unsloth_training_checkpoints*
+*llm-grpo-*csv*
+models/*
