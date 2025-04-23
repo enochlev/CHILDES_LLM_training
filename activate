@@ -3,14 +3,15 @@ conda create --name childs \
     pytorch-cuda=11.8 \
     pytorch cudatoolkit xformers -c pytorch -c nvidia -c xformers \
     -y
-
-pip install xformers==0.0.29.post1 --index-url https://download.pytorch.org/whl/cu118
-pip uninstall torch torchvision torchaudio -y
-pip install unsloth
-pip install torch==2.4.0 torchvision==0.19.0 --index-url https://download.pytorch.org/whl/cu118
-
-pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu118
+conda activate childs
 pip install sentence-transformers==3.4.1
+pip install install unsloth
+pip uninstall torch torchvision torchaudio -y
+pip torch==2.4.0 torchvision==0.19.0 xformers==0.0.27.post2 --index-url https://download.pytorch.org/whl/cu118
+
+module load gcc/10.2.0 borah-base/default cuda11.8/blas/11.8.0 cuda11.8/fft/11.8.0 cuda11.8/nsight/11.8.0 cuda11.8/profiler/11.8.0 cuda11.8/toolkit/11.8.0 cuda/11.8.0/gcc/11.3.0 cudnn8.7-cuda11/8.7.0$
+
+
 pip install matplotlib
 
 conda activate childes

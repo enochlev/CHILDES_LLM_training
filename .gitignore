@@ -5,3 +5,4 @@ models/*
 *unsloth_training_checkpoints*
 *llm-grpo-*csv*
 models/*
+*__pycache__*

@@ -29,7 +29,7 @@ use_vllm = False
 print(f"Steps: {steps}")
 print(f"Base Model Name: {base_model_name}")
 print(f"Model Output Name: {model_output_name}")
-
+print(f"Downscalling: {downscalling}")
 # steps = 4
 # base_model_name = "HuggingFaceTB/SmolLM2-135M-Instruct"
 # model_output_name = "llm-grpo-toddler-small-2"
@@ -127,6 +127,17 @@ def childish_reward(prompts, completions, **kwargs) -> list[float]:
 
     return scores
 
+def stop_words_score_filter(scores, completions, **kwargs):
+    # give a 1/x reward for every appearnce of stop word
+    #"mommy|daddy|tummy|diaper|more"
+    stop_words = r"mommy|daddy|tummy|diaper|more|ball"
+    new_scores = []
+    for i in range(len(scores)):
+        score = scores[i]
+        completion = completions[i]
+        score = score * (1/(max(1, 1+ len(re.findall(stop_words, completion.lower())))))
+        new_scores.append(score)
+    return new_scores
 
 def coherence_reward(prompts, completions, **kwargs) -> list[float]:
     if "<|im_start|>" in prompts[0]:#huggingface
@@ -145,19 +156,20 @@ def coherence_reward(prompts, completions, **kwargs) -> list[float]:
     #tranformer the score to be between 0 and 1 using df_coherence_min and df_coherence_max
     score = [(s - df_coherence_min) / (df_coherence_max - df_coherence_min) for s in score]
 
-    if random.random() < 0.02:
+    if random.random() < 0.03:
         print("Prompt:", prompts[0])
         print("Completion:", completions[0])
         print("Score:", score[0])
     #apply min max normalization so that it is between 0 and 1 and not between min and max
+
+
+    #score = stop_words_score_filter(score, completions)
     return score
 
 
 
-
-
 #predict cosin similairty of responce to answer
-def coherence_reward_2(prompts, completions, **kwargs) -> list[float]:
+def coherence_reward2(prompts, completions, **kwargs) -> list[float]:
 
     if "<|im_start|>" in prompts[0]:#huggingface
         prompts = [prompt.split("<|im_start|>user\n",1)[-1].split("<|im_end|>",1)[0] for prompt in prompts]
@@ -219,11 +231,12 @@ def coherence_reward_2(prompts, completions, **kwargs) -> list[float]:
         scores_final.append(avg)
 
 
-    if random.random() < 0.01:
+    if random.random() < 0.03:
         print("Prompt:", prompts[0])
         print("Completion:", completions[0])
         print("Score:", scores_final[0])
     #apply min max normalization so that it is between 0 and 1 and not between min and max
+    scores_final = stop_words_score_filter(scores_final, completions)
     return scores_final
 
 def length_reward(prompts, completions, **kwargs) -> list[float]:
@@ -240,7 +253,7 @@ def length_reward(prompts, completions, **kwargs) -> list[float]:
     else:
         assert False
 
-    scores = [model_length.predict(completion,temperature=1) for completion in completions]
+    scores = [min(model_length.predict(completion,temperature=4),1) for completion in completions]
     #also give a lower score for each number of punctuation marks. Were 1 is ok. use 1/x. but if there is 0 then also give 1.0 score
     scores = [score * (1/(max(1, len(re.findall(r'[.!?,;:]', completion))))) for score, completion in zip(scores, completions)]
 
@@ -300,6 +313,7 @@ df_coherence_max = df['child_coherence_score_prediction'].max()
 df = df.drop_duplicates(subset=['text'])
 #df.text mus have question mark at the end
 df.text = df.text.str.strip()
+#df.text = df.text.str.lower()
 #sort by child_coherence_score_prediction descending so that we can get the best parent questions#get top 10%
 df = df.sort_values(by='adult_coherence_score_prediction', ascending=False).head(df.shape[0]//10).sample(frac=1, random_state=42).reset_index(drop=True)
 df = df.reset_index(drop=True)
