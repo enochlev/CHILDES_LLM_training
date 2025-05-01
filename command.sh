@@ -2,7 +2,7 @@
 #SBATCH -J grpo_trainer                # Job name
 #SBATCH -o slurm_gpu_%j.out            # Standard output and error log
 #SBATCH -p gpu-l40                    # Partition for short GPU jobs (≤7 days)
-#SBATCH -t 24:00:00                    # Time limit of 24 hours
+#SBATCH -t 2:00:00                    # Time limit of 24 hours
 #SBATCH --nodes=1                      # Use one node
 #SBATCH --ntasks=1                     # One task
 #SBATCH --cpus-per-task=16              # Minimal CPU allocation
@@ -14,12 +14,32 @@ echo "Working directory: $(pwd)"
 echo "CPUs allocated: $SLURM_CPUS_PER_TASK"
 echo "GPUs allocated: $SLURM_JOB_GPUS"
 
-
+echo "Starting environment setup..."
 . ~/.bashrc
 conda activate childes
 cd ~/CHILDES_LLM_training/GRPO_trainer
+#python GRPO_trainer.py 1500 "HuggingFaceTB/SmolLM2-1.7B-Instruct" "llm-grpo-toddler-large-1" 3
+
 #python GRPO_trainer.py 1500 "HuggingFaceTB/SmolLM2-360M-Instruct" "llm-grpo-toddler-small-15" 3
-python GRPO_trainer.py 5000 "/bsuhome/enochlevandovsky/scratch/checkpoints/smollm2-102M/out" "llm-grpo-toddler-tiny-16" 3
+#python GRPO_trainer.py 2000 "/bsuhome/enochlevandovsky/scratch/models/good_model_4" "llm-grpo-toddler-small-17" 1
+#python GRPO_trainer.py 2000 "/bsuhome/enochlevandovsky/scratch/models/good_model_3" "llm-grpo-toddler-small-18" 1
+#python GRPO_trainer.py 2000 "/bsuhome/enochlevandovsky/scratch/models/good_model_2" "llm-grpo-toddler-small-19" 1
+#python GRPO_trainer.py 2000 "/bsuhome/enochlevandovsky/scratch/models/good_model_1" "llm-grpo-toddler-small-20" 1
+#python GRPO_trainer.py 2000 "/bsuhome/enochlevandovsky/scratch/models/good_model_4" "llm-grpo-toddler-small-21" 1 IDK
+#python GRPO_trainer.py 1000 "/bsuhome/enochlevandovsky/scratch/models/good_model_1" "llm-grpo-toddler-small-22" 1 #4e5 lr
+#python GRPO_trainer.py 1000 "/bsuhome/enochlevandovsky/scratch/models/good_model_1" "llm-grpo-toddler-small-23" 1 #4e5 with simple coherence reward
+#python GRPO_trainer.py 1000 "/bsuhome/enochlevandovsky/scratch/models/good_model_4" "llm-grpo-toddler-small-24" 1 #4e5 with simple coherence reward
+#python GRPO_trainer.py 1000 "/bsuhome/enochlevandovsky/scratch/models/good_model_1" "llm-grpo-toddler-small-25" 1 #4e5 normal coherence reward
+#python GRPO_trainer.py 1000 "/bsuhome/enochlevandovsky/scratch/models/good_model_4" "llm-grpo-toddler-small-26" 1 #4e5 normal coherence reward
+
+python GRPO_trainer.py 1000 "/bsuhome/enochlevandovsky/scratch/models/good_model_6" "llm-grpo-toddler-small-31" 1 #4e5 normal coherence reward
+
+
+#29 = /10 lr
+#30 = gen/2
+
+#export CUDA_VISIBLE_DEVICES=3
+
 
 #python GRPO_trainer.py 2500 "HuggingFaceTB/SmolLM2-135M-Instruct" "llm-grpo-toddler-tiny-6" 3
 #{ "steps": 7500, "base_model_name": "HuggingFaceTB/SmolLM2-135M-Instruct", "model_output_name": "llm-grpo-toddler-tiny-1", "downscalling": 4 },

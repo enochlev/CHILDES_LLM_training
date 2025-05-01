@@ -96,6 +96,7 @@ class BayesianSentenceLengthSkewModel:
         
         
         adjusted_score = base_score * (temperature ** (1 - base_score))
+        adjusted_score = max(0.0, min(adjusted_score, 1.0))
             
         return adjusted_score
     

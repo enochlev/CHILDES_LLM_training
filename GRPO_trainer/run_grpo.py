@@ -3,7 +3,7 @@
 python_path = "python"
 itterations = [
 #{ "steps": 7500, "base_model_name": "HuggingFaceTB/SmolLM2-135M-Instruct", "model_output_name": "llm-grpo-toddler-tiny-1", "downscalling": 4 },
-{ "steps": 5000, "base_model_name": "HuggingFaceTB/SmolLM2-360M-Instruct", "model_output_name": "llm-grpo-toddler-small-2" , "downscalling": 4 },
+{ "steps": 5000, "base_model_name": "HuggingFaceTB/SmolLM2-360M-Instruct", "model_output_name": "llm-grpo-toddler-small-2" , "downscalling": 3 },
 #{ "steps": 2500, "base_model_name": "HuggingFaceTB/SmolLM2-1.7B-Instruct", "model_output_name": "llm-grpo-toddler-large-1", "downscalling": 4 },
 ]
 

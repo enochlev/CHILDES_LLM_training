@@ -53,8 +53,6 @@ model, tokenizer = FastLanguageModel.from_pretrained(
     load_in_8bit = False,
     fast_inference = use_vllm, # Enable vLLM fast inference
     max_lora_rank = lora_rank,
-    gpu_memory_utilization = 0.65, # Reduce if out of memory
-    #float8_kv_cache = True, # Enable 8bit cache for key and value
 )
 
 
@@ -87,13 +85,13 @@ if use_vllm:
     )
 
 training_args = GRPOConfig(
-    learning_rate = 5e-6,
+    learning_rate = 10e-5,
     warmup_ratio = 0.1,
     lr_scheduler_type = "cosine",
     optim = "adamw_8bit",
     per_device_train_batch_size = 256,
     gradient_accumulation_steps = 1, # Increase to 4 for smoother training
-    num_generations = 8, # Decrease if out of memory
+    num_generations = 4, # Decrease if out of memory
     max_prompt_length = max_prompt_length,
     max_completion_length = max_prompt_length,
     num_train_epochs = 4, # Set to 1 for a full training run
@@ -104,11 +102,14 @@ training_args = GRPOConfig(
     #save_strategy = "steps",
     #save_steps = 249,
     #output_dir = "llm-grpo-toddler-medium-1",
-    reward_weights = [1.0, 1.0/downscalling, .15],
+    reward_weights = [.3, 1.0/downscalling, 1.0],
 )
 
 
-
+#print args
+print("Training Arguments:")
+for key, value in training_args.to_dict().items():
+    print(f"{key}: {value}")
 
 def childish_reward(prompts, completions, **kwargs) -> list[float]:  
     #computes reward score of completions, to make sure it is the tone of the reward model
@@ -156,7 +157,7 @@ def coherence_reward(prompts, completions, **kwargs) -> list[float]:
     #tranformer the score to be between 0 and 1 using df_coherence_min and df_coherence_max
     score = [(s - df_coherence_min) / (df_coherence_max - df_coherence_min) for s in score]
 
-    if random.random() < 0.03:
+    if random.random() < 0.06:
         print("Prompt:", prompts[0])
         print("Completion:", completions[0])
         print("Score:", score[0])
@@ -164,7 +165,30 @@ def coherence_reward(prompts, completions, **kwargs) -> list[float]:
 
 
     #score = stop_words_score_filter(score, completions)
+    score = repeated_words_score_filter(score, completions)
     return score
+
+completion_history = []
+def repeated_words_score_filter(scores, completions, **kwargs):
+    """Penalize completions that appeared recently in the queue."""
+    global completion_history
+    new_scores = []
+    # Normalize completions for comparison (optional)
+    completions_normalized = [c.strip().lower() for c in completions]
+    history_normalized = set(c.strip().lower() for c in completion_history)
+    for i in range(len(scores)):
+        score = scores[i]
+        completion = completions[i]
+        c_norm = completions_normalized[i]
+        if c_norm in history_normalized:
+            score = score * 0.5
+        new_scores.append(score)
+    # push completions to history, trim to desired queue length
+    max_hist = len(completions) * 3
+    completion_history += completions
+    if len(completion_history) > max_hist:
+        completion_history = completion_history[-max_hist:]
+    return new_scores
 
 
 
@@ -231,12 +255,13 @@ def coherence_reward2(prompts, completions, **kwargs) -> list[float]:
         scores_final.append(avg)
 
 
-    if random.random() < 0.03:
+    if random.random() < 0.06:
         print("Prompt:", prompts[0])
         print("Completion:", completions[0])
         print("Score:", scores_final[0])
     #apply min max normalization so that it is between 0 and 1 and not between min and max
-    scores_final = stop_words_score_filter(scores_final, completions)
+    #scores_final = stop_words_score_filter(scores_final, completions)
+    scores_final = repeated_words_score_filter(scores_final, completions)
     return scores_final
 
 def length_reward(prompts, completions, **kwargs) -> list[float]:
@@ -283,7 +308,7 @@ class CustomLogger(TrainerCallback):
             "rewards / length_reward": logs.get("rewards/length_reward"),
         }
 
-        save_frequency = [500, 750, 1000,1250, 1500, 1750, 2000 ,3500, 3000,4500, 5000]
+        save_frequency = [150,300, 500, 750, 1000,1250, 1500, 1750, 2000 ,3500, 3000,4500, 5000]
         if steps not in save_frequency:
             save_frequency.append(steps)
 
@@ -313,9 +338,9 @@ df_coherence_max = df['child_coherence_score_prediction'].max()
 df = df.drop_duplicates(subset=['text'])
 #df.text mus have question mark at the end
 df.text = df.text.str.strip()
-#df.text = df.text.str.lower()
+df.text = df.text.str.lower()
 #sort by child_coherence_score_prediction descending so that we can get the best parent questions#get top 10%
-df = df.sort_values(by='adult_coherence_score_prediction', ascending=False).head(df.shape[0]//10).sample(frac=1, random_state=42).reset_index(drop=True)
+df = df.sort_values(by='adult_coherence_score_prediction', ascending=False).head(df.shape[0]//5).sample(frac=1, random_state=41).reset_index(drop=True)
 df = df.reset_index(drop=True)
 df = df.rename(columns={'text': 'prompt'})
 df = df[['prompt']]
